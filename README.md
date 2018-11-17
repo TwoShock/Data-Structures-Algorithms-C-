@@ -4,4 +4,4 @@ This project contains a list of commonly used data structures
 * Binary Search Tree
 * Stacks
 * Queue
-*HashTables
+* HashTables
