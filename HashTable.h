@@ -7,6 +7,7 @@ class HashTable{
 private:
     struct HashNode{
         value element;
+        key k;
         HashNode *next;
         HashNode(){
             next = NULL;
@@ -21,15 +22,53 @@ private:
     unsigned int size;
     unsigned int maxSize;
     int collisionBound;
-    
+    unsigned int rehashCount;
     void rehash(){
+        rehashCount++;
         vector<HashNode*> newHashTable;
         newHashTable.reserve(maxSize*2);
         for (int i = 0; i < hashTable.size(); i++) {
-            newHashTable[i] = hashTable[i];
+            if (hashTable[i] != NULL) {
+                HashNode *head = hashTable[i];
+                while (head != NULL) {
+                    try{
+                        insertUtil(head->k,head->element,newHashTable);
+                    }
+                    catch(exception e){
+                        cerr<<"ERROR";
+                        cerr<<e.what()<<endl;
+                    }
+                    if(head == NULL) break;
+                    head = head->next;
+                }
+            }
         }
         hashTable = newHashTable;
         maxSize *= 2;
+    }
+    bool insertUtil(key k,value v,vector<HashNode*>& hashTable){
+        size++;
+        unsigned long index = hashFunction(k,maxSize);
+        HashNode *element = new HashNode(v);
+        element->k = k;
+        if (hashTable[index] == NULL) {
+            hashTable[index] = element;
+        }
+        else{
+            unsigned int count = 2;
+            HashNode *head = hashTable[index];
+            while (head->next != NULL) {
+                count++;
+                head = head->next;
+            }
+           
+            if (count > collisionBound) {
+                rehash();
+                return false;
+            }
+             head->next = element;
+        }
+        return true;
     }
 public:
     HashTable(HashFunction<key>& hashFunction,unsigned int maxCollision = 4,
@@ -41,29 +80,9 @@ public:
         for (int i = 0 ; i < maxSize; i++) {
             hashTable[i] = NULL;
         }
+        rehashCount = 0;
     }
-    bool insert(key k,value v){
-        size++;
-        unsigned int index = hashFunction(k,maxSize);
-        HashNode *element = new HashNode(v);
-        if (hashTable[index] == NULL) {
-            hashTable[index] = element;
-        }
-        else{
-            unsigned int count = 2;
-            HashNode *head = hashTable[index];
-            while (head->next != NULL) {
-                count++;
-                head = head->next;
-            }
-            if (count > collisionBound) {
-                rehash();
-                return false;
-            }
-            head->next = element;
-        }
-        return true;
-    }
+
     void printIndex(unsigned int index){
         HashNode *head = hashTable[index];
         while (head != NULL) {
@@ -75,15 +94,20 @@ public:
         if (!isMember(k,v)) {
             return false;
         }
-        unsigned int index = hashFunction(k,maxSize);
+        unsigned long index = hashFunction(k,maxSize);
         HashNode *head = hashTable[index];
         HashNode *prev = NULL;
-        /*if (head->element == v) {
-            HashNode *temp = head;
-            temp = temp->next;
-            //free(head);
-            head = temp;
-        }*/
+        if(head->next == NULL){
+            hashTable[index] = NULL;
+            delete head;
+            return true;
+        }
+        if (head->element == v && head->next != NULL) {
+            head->element = head->next->element;
+            head->next = head->next->next;
+            return true;
+        }
+        
         while (head != NULL) {
             prev = head;
             head = head->next;
@@ -92,11 +116,14 @@ public:
             }
         }
         prev->next = head->next;
-        free(head);
+        delete head;
         return true;
     }
+    bool insert(key k,value v){
+        return insertUtil(k,v,this->hashTable);
+    }
     bool isMember(key k,value v){
-        unsigned int index = hashFunction(k,maxSize);
+        unsigned long index = hashFunction(k,maxSize);
         HashNode *head = hashTable[index];
         while (head != NULL) {
             if (head->element == v) {
@@ -107,7 +134,7 @@ public:
         return false;
     }
     unsigned int numMatches(key k){
-        unsigned int index = hashFunction(k,maxSize);
+        unsigned long index = hashFunction(k,maxSize);
         unsigned int count = 0;
         HashNode *head = hashTable[index];
         while (head != NULL) {
@@ -116,8 +143,11 @@ public:
         }
         return count;
     }
+    unsigned int getRehashCount(){
+        return rehashCount;
+    }
     value getIthMatch(key k,unsigned int i){
-        unsigned int index = hashFunction(k,maxSize);
+        unsigned long index = hashFunction(k,maxSize);
         unsigned int count = 0;
         HashNode *head = hashTable[index];
         while (head != NULL) {
