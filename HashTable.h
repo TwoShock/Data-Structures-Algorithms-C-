@@ -27,24 +27,17 @@ private:
         rehashCount++;
         vector<HashNode*> newHashTable;
         newHashTable.reserve(maxSize*2);
+        maxSize = 2*maxSize;
         for (int i = 0; i < hashTable.size(); i++) {
             if (hashTable[i] != NULL) {
                 HashNode *head = hashTable[i];
-                while (head != NULL) {
-                    try{
-                        insertUtil(head->k,head->element,newHashTable);
-                    }
-                    catch(exception e){
-                        cerr<<"ERROR";
-                        cerr<<e.what()<<endl;
-                    }
-                    if(head == NULL) break;
+                while (head->next != NULL){
+                    insertUtil(head->k,head->element,newHashTable);
                     head = head->next;
                 }
             }
         }
         hashTable = newHashTable;
-        maxSize *= 2;
     }
     bool insertUtil(key k,value v,vector<HashNode*>& hashTable){
         size++;
@@ -53,6 +46,7 @@ private:
         element->k = k;
         if (hashTable[index] == NULL) {
             hashTable[index] = element;
+            return true;
         }
         else{
             unsigned int count = 2;
@@ -159,6 +153,16 @@ public:
         }
         cerr<<"No match"<<endl;
         throw 0;
+    }
+    friend ostream& operator<<(ostream& os,HashTable& table){
+        for(int i = 0;i<table.maxSize;i++){
+            if (table.hashTable[i] != NULL) {
+                os<<i<<": ";
+                table.printIndex(i);
+                os<<endl;
+            }
+        }
+        return os;
     }
     
 };
