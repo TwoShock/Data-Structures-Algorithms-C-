@@ -23,20 +23,24 @@ private:
     unsigned int maxSize;
     int collisionBound;
     unsigned int rehashCount;
+    
     void rehash(){
         rehashCount++;
         vector<HashNode*> newHashTable;
-        newHashTable.reserve(maxSize*2);
-        maxSize = 2*maxSize;
+        maxSize = maxSize*2;
+        newHashTable.reserve(maxSize);
+        
         for (int i = 0; i < hashTable.size(); i++) {
             if (hashTable[i] != NULL) {
+                cout<<hashTable[i]->element;
                 HashNode *head = hashTable[i];
-                while (head->next != NULL){
+                while (head != NULL) {
                     insertUtil(head->k,head->element,newHashTable);
                     head = head->next;
                 }
             }
         }
+        hashTable.resize(maxSize);
         hashTable = newHashTable;
     }
     bool insertUtil(key k,value v,vector<HashNode*>& hashTable){
@@ -55,18 +59,18 @@ private:
                 count++;
                 head = head->next;
             }
-           
+            
             if (count > collisionBound) {
                 rehash();
                 return false;
             }
-             head->next = element;
+            head->next = element;
         }
         return true;
     }
 public:
     HashTable(HashFunction<key>& hashFunction,unsigned int maxCollision = 4,
-    unsigned int maxSize = 1024):hashFunction(hashFunction){
+              unsigned int maxSize = 1024):hashFunction(hashFunction){
         collisionBound = maxCollision;
         size = 0;
         this->maxSize = maxSize;
@@ -76,9 +80,10 @@ public:
         }
         rehashCount = 0;
     }
-
+    
     void printIndex(unsigned int index){
         HashNode *head = hashTable[index];
+        cout<<index<<" : ";
         while (head != NULL) {
             cout<<head->element<<" ";
             head = head->next;
